@@ -14,6 +14,7 @@ const STATUS_LABEL: Record<JobStatus, string> = {
   running:   "Processing",
   completed: "Completed",
   failed:    "Failed",
+  rejected:  "Rejected",
 };
 
 const STATUS_CX: Record<JobStatus, string> = {
@@ -21,6 +22,7 @@ const STATUS_CX: Record<JobStatus, string> = {
   running:   "bg-blue-50 text-blue-700 border-blue-100",
   pending:   "bg-gray-50 text-gray-600 border-gray-200",
   failed:    "bg-red-50 text-red-600 border-red-100",
+  rejected:  "bg-amber-50 text-amber-700 border-amber-100",
 };
 
 const STATUS_PILL: Record<JobStatus, string> = {
@@ -28,6 +30,7 @@ const STATUS_PILL: Record<JobStatus, string> = {
   running:   "border-blue-200 bg-blue-50 text-blue-700 data-[active=true]:bg-blue-600 data-[active=true]:text-white data-[active=true]:border-blue-600",
   pending:   "border-gray-200 bg-gray-50 text-gray-600 data-[active=true]:bg-gray-600 data-[active=true]:text-white data-[active=true]:border-gray-600",
   failed:    "border-red-200 bg-red-50 text-red-600 data-[active=true]:bg-red-600 data-[active=true]:text-white data-[active=true]:border-red-600",
+  rejected:  "border-amber-200 bg-amber-50 text-amber-700 data-[active=true]:bg-amber-600 data-[active=true]:text-white data-[active=true]:border-amber-600",
 };
 
 function relativeTime(iso: string): string {
@@ -281,7 +284,10 @@ export function PipelinePage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${STATUS_CX[run.status]}`}>
+                        <span
+                          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${STATUS_CX[run.status]}`}
+                          title={run.status === "rejected" && run.rejection_message ? run.rejection_message : undefined}
+                        >
                           {run.status === "running" && <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />}
                           {STATUS_LABEL[run.status]}
                         </span>

@@ -9,6 +9,7 @@ import {
   Users,
   UserCircle,
   Building2,
+  Brain,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
   { href: "/dashboard",              label: "Dashboard",    icon: LayoutDashboard, adminOnly: false },
   { href: "/dashboard/pipeline",     label: "Pipeline",     icon: FlaskConical,    adminOnly: false },
   { href: "/dashboard/patients",     label: "Patients",     icon: Users,           adminOnly: false },
+  { href: "/dashboard/icp",         label: "ICP Module",   icon: Brain,           adminOnly: false },
   { href: "/dashboard/profile",      label: "Profile",      icon: UserCircle,      adminOnly: false },
   { href: "/dashboard/organisation", label: "Organisation", icon: Building2,       adminOnly: true  },
 ] as const;

@@ -5,10 +5,12 @@ import { OverviewTab } from "./tabs/OverviewTab";
 import { PipelineTab } from "./tabs/PipelineTab";
 import { PaymentsTab } from "./tabs/PaymentsTab";
 import { SettingsTab } from "./tabs/SettingsTab";
+import { IcpModuleTab } from "./tabs/IcpModuleTab";
 
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "pipeline", label: "Pipeline" },
+  { id: "icp",      label: "ICP Module" },
   { id: "payments", label: "Payments" },
   { id: "settings", label: "Settings" },
 ] as const;
@@ -26,6 +28,7 @@ export function DashboardShell() {
 
       <TabPanel tabId="overview"><OverviewTab /></TabPanel>
       <TabPanel tabId="pipeline"><PipelineTab /></TabPanel>
+      <TabPanel tabId="icp"><IcpModuleTab /></TabPanel>
       <TabPanel tabId="payments"><PaymentsTab /></TabPanel>
       <TabPanel tabId="settings"><SettingsTab /></TabPanel>
     </Tabs>

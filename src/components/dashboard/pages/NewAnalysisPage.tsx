@@ -17,6 +17,7 @@ import { pipelineApi } from "@/lib/api/pipeline";
 import type { Feature, PatientSummary } from "@/types/pipeline";
 
 type RunType = "image" | "video";
+type SegMode = "dual";
 
 const BATCH_MAX_MB = 500;
 
@@ -50,6 +51,7 @@ export function NewAnalysisPage() {
   const [features, setFeatures]           = useState<Feature[]>([]);
   const [selectedKeys, setSelectedKeys]   = useState<Set<string>>(new Set());
   const [featuresLoading, setFeaturesLoading] = useState(true);
+  const [segMode, setSegMode]             = useState<SegMode>("dual");
   const [submitting, setSubmitting]       = useState(false);
   const [submitError, setSubmitError]     = useState<string | null>(null);
 
@@ -60,6 +62,7 @@ export function NewAnalysisPage() {
   const [batchDragging,   setBatchDragging]   = useState(false);
   const [batchSubmitting, setBatchSubmitting] = useState(false);
   const [batchError,      setBatchError]      = useState<string | null>(null);
+  const [batchSegMode,    setBatchSegMode]    = useState<SegMode>("dual");
 
   useEffect(() => {
     pipelineApi.listPatients().then((res) => {
@@ -187,6 +190,7 @@ export function NewAnalysisPage() {
     try {
       const form = new FormData();
       form.append("file", batchFile);
+      form.append("segmentation_mode", batchSegMode);
       const res = await pipelineApi.batchUpload(form);
       if (!res.ok) {
         setBatchError(res.error);
@@ -216,6 +220,9 @@ export function NewAnalysisPage() {
         .map((f) => f.pipeline_key)
         .filter((k) => selectedKeys.has(k));
       form.append("selected_features", JSON.stringify(effectiveKeys));
+      if (runType === "image") {
+        form.append("segmentation_mode", segMode);
+      }
 
       const createRes = await pipelineApi.createJob(form);
       if (!createRes.ok) {
@@ -449,6 +456,18 @@ export function NewAnalysisPage() {
           )}
         </div>
 
+        {/* Segmentation model — dual mode only */}
+        {runType === "image" && selectedKeys.has("segmentation") && (
+          <div className="px-6 pb-4">
+            <div className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3">
+              <span className="text-sm font-medium text-[var(--text-primary)]">Dual mode</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                Two specialised models — best accuracy
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Footer / Run button */}
         <div className="flex items-center justify-between gap-3 px-6 py-4 bg-[var(--surface-1)]">
           {submitError ? (
@@ -554,6 +573,16 @@ export function NewAnalysisPage() {
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleBatchFile(f); }}
             className="sr-only"
           />
+        </div>
+
+        {/* Batch segmentation model — dual mode only */}
+        <div className="px-6 pb-4 pt-2 border-t border-[var(--border)]">
+          <div className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3">
+            <span className="text-sm font-medium text-[var(--text-primary)]">Dual mode</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+              Two specialised models — best accuracy
+            </span>
+          </div>
         </div>
 
         {/* Footer */}

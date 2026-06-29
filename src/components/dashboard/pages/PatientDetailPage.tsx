@@ -15,6 +15,7 @@ const STATUS_LABEL: Record<JobStatus, string> = {
   running:   "Processing",
   completed: "Completed",
   failed:    "Failed",
+  rejected:  "Rejected",
 };
 
 const STATUS_CX: Record<JobStatus, string> = {
@@ -22,6 +23,7 @@ const STATUS_CX: Record<JobStatus, string> = {
   running:   "bg-blue-50 text-blue-700 border-blue-100",
   pending:   "bg-gray-50 text-gray-600 border-gray-200",
   failed:    "bg-red-50 text-red-600 border-red-100",
+  rejected:  "bg-amber-50 text-amber-700 border-amber-100",
 };
 
 function relativeTime(iso: string): string {

@@ -54,7 +54,12 @@ export class ApiClient {
       ...options.headers,
     };
 
-    const res = await fetch(`${this.baseUrl}${path}`, { ...options, headers });
+    let res: Response;
+    try {
+      res = await fetch(`${this.baseUrl}${path}`, { ...options, headers });
+    } catch {
+      return { ok: false, error: "Network error. The server may be unavailable." };
+    }
 
     // Auto-refresh on 401 and retry once
     if (res.status === 401 && retry) {
@@ -64,13 +69,18 @@ export class ApiClient {
       return { ok: false, error: "Session expired. Please log in again." };
     }
 
-    const data = await res.json();
+    let data: unknown;
+    try {
+      data = await res.json();
+    } catch {
+      return { ok: false, error: `Server returned an unexpected response (HTTP ${res.status}). Check that the backend is running.` };
+    }
 
     if (!res.ok) {
       return { ok: false, error: extractError(data) };
     }
 
-    return { ok: true, data };
+    return { ok: true, data: data as T };
   }
 
   get<T>(path: string) {

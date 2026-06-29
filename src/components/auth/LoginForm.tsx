@@ -32,6 +32,7 @@ export function LoginForm() {
     }
 
     setAuth(result.data);
+    setIsLoading(false);
     router.push(ROUTES.dashboard);
   };
 

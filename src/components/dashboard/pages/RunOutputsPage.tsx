@@ -10,6 +10,30 @@ import {
 import { pipelineApi } from "@/lib/api/pipeline";
 import type { RunDetail, RunOutput, JobStatus } from "@/types/pipeline";
 
+// ─── Analysis results types ────────────────────────────────────────────────────
+
+interface AvgMetricsFlags {
+  insufficient_arteries: boolean;
+  insufficient_veins:    boolean;
+  arteries_found:        number;
+  veins_found:           number;
+}
+
+interface AvmMetrics {
+  CRAE_um:       number | null;
+  CRVE_um:       number | null;
+  AVR:           number | null;
+  metrics_flags: AvgMetricsFlags;
+}
+
+interface RegionData {
+  fractal_dimension: number | null;
+  caliber?: Record<string, number | null>;
+  avr_metrics?: AvmMetrics;
+}
+
+type AnalysisResults = Record<string, RegionData>;
+
 interface Props { runId: number }
 
 type ViewMode = "list" | "media";
@@ -19,6 +43,7 @@ const STATUS_LABEL: Record<JobStatus, string> = {
   running:   "Processing",
   completed: "Completed",
   failed:    "Failed",
+  rejected:  "Rejected",
 };
 
 const STATUS_CX: Record<JobStatus, string> = {
@@ -26,6 +51,7 @@ const STATUS_CX: Record<JobStatus, string> = {
   running:   "bg-blue-50 text-blue-700 border-blue-100",
   pending:   "bg-gray-50 text-gray-600 border-gray-200",
   failed:    "bg-red-50 text-red-600 border-red-100",
+  rejected:  "bg-amber-50 text-amber-700 border-amber-100",
 };
 
 const IMAGE_EXTS = new Set(["jpg", "jpeg", "png", "webp", "tiff", "tif", "gif", "bmp"]);
@@ -45,6 +71,115 @@ function formatDate(iso: string) {
     day: "2-digit", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
+}
+
+// ─── Analysis results table ────────────────────────────────────────────────────
+
+const REGION_ORDER = ["Global", "Optic Disc", "Inner Ring", "Outer Ring"];
+
+function fmt(v: number | null | undefined, decimals = 2): string {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  return v.toFixed(decimals);
+}
+
+function fmtInt(v: number | null | undefined): string {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  return Math.round(v).toString();
+}
+
+function AnalysisResultsCard({ fileUrl }: { fileUrl: string }) {
+  const [data,    setData]    = useState<AnalysisResults | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(false);
+
+  useEffect(() => {
+    fetch(fileUrl)
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
+      .then((json: AnalysisResults) => { setData(json); setLoading(false); })
+      .catch(() => { setError(true); setLoading(false); });
+  }, [fileUrl]);
+
+  if (loading) return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-0)] shadow-[var(--shadow-sm)]">
+      <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--surface-1)]">
+        <p className="text-sm font-semibold text-[var(--text-primary)]">Analysis Results</p>
+      </div>
+      <div className="flex items-center justify-center h-24 text-sm text-[var(--text-muted)]">
+        Loading…
+      </div>
+    </div>
+  );
+
+  if (error || !data) return null;
+
+  const rows = REGION_ORDER.filter((r) => r in data);
+
+  const COLS = [
+    { label: "Region",              key: "region"   },
+    { label: "Fractal Dimension",   key: "fd"       },
+    { label: "CRAE (micrometre)",   key: "crae"     },
+    { label: "CRVE (micrometre)",   key: "crve"     },
+    { label: "AVR",                 key: "avr"      },
+    { label: "Arteries found",      key: "art"      },
+    { label: "Veins found",         key: "vein"     },
+  ];
+
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-0)] shadow-[var(--shadow-sm)] overflow-hidden">
+      <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--surface-1)]">
+        <p className="text-sm font-semibold text-[var(--text-primary)]">Analysis Results</p>
+        <p className="text-xs text-[var(--text-muted)] mt-0.5">Vessel metrics per retinal region</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-[var(--surface-2)]">
+              {COLS.map((c) => (
+                <th
+                  key={c.key}
+                  className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] whitespace-nowrap"
+                >
+                  {c.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[var(--border)]">
+            {rows.map((region) => {
+              const d   = data[region];
+              const avm = d.avr_metrics;
+              const isGlobal = region === "Global";
+              return (
+                <tr key={region} className="hover:bg-[var(--surface-1)] transition-colors">
+                  <td className="px-5 py-3 font-medium text-[var(--text-primary)] whitespace-nowrap">
+                    {region}
+                  </td>
+                  <td className="px-5 py-3 text-[var(--text-secondary)] tabular-nums">
+                    {fmt(d.fractal_dimension, 4)}
+                  </td>
+                  <td className="px-5 py-3 text-[var(--text-secondary)] tabular-nums">
+                    {isGlobal ? "—" : fmtInt(avm?.CRAE_um)}
+                  </td>
+                  <td className="px-5 py-3 text-[var(--text-secondary)] tabular-nums">
+                    {isGlobal ? "—" : fmtInt(avm?.CRVE_um)}
+                  </td>
+                  <td className="px-5 py-3 text-[var(--text-secondary)] tabular-nums">
+                    {isGlobal ? "—" : fmt(avm?.AVR)}
+                  </td>
+                  <td className="px-5 py-3 text-[var(--text-secondary)] tabular-nums">
+                    {isGlobal ? "—" : (avm?.metrics_flags.arteries_found ?? "—")}
+                  </td>
+                  <td className="px-5 py-3 text-[var(--text-secondary)] tabular-nums">
+                    {isGlobal ? "—" : (avm?.metrics_flags.veins_found ?? "—")}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 // ─── Sub-views ────────────────────────────────────────────────────────────────
@@ -393,8 +528,24 @@ export function RunOutputsPage({ runId }: Props) {
               </div>
             </div>
           )}
+          {run.features.some((f) => f.name.toLowerCase() === "segmentation") && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Seg. model</p>
+              <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-secondary)]">
+                {run.seg_mode === "mtl" ? "MTL" : "Dual"}
+              </span>
+            </div>
+          )}
         </div>
       )}
+
+      {/* Analysis results table — shown when the run has an analysis_results.json */}
+      {run && run.status === "completed" && (() => {
+        const analysisOutput = run.outputs.find(
+          (o) => o.artifact?.output_key?.endsWith("analysis_results.json")
+        );
+        return analysisOutput ? <AnalysisResultsCard fileUrl={analysisOutput.file} /> : null;
+      })()}
 
       {/* Outputs card */}
       <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-0)] shadow-[var(--shadow-sm)] overflow-hidden">

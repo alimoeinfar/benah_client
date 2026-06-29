@@ -5,14 +5,16 @@ export interface Feature {
   pipeline_key: string;
 }
 
-export type JobStatus = "pending" | "running" | "completed" | "failed";
+export type JobStatus = "pending" | "running" | "completed" | "failed" | "rejected";
 
 export interface Job {
   id: number;
   status: JobStatus;
   type: string;
+  seg_mode: "dual" | "mtl";
   patient: { id: number; number: number } | null;
   features: { id: number; name: string }[];
+  rejection_message: string;
   created_at: string;
   updated_at: string;
 }
