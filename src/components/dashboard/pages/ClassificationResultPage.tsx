@@ -27,7 +27,7 @@ const STATUS_CX: Record<ClassificationStatus, string> = {
 
 function imageUrl(path: string): string {
   if (!path) return "";
-  // Strip full S3 URL down to the key, then serve via Django proxy
+  if (path.startsWith("/api/")) return path;
   const s3Match = path.match(/s3\.amazonaws\.com\/(.+?)(\?|$)/);
   const key = s3Match ? s3Match[1] : path.replace(/^\/?(media\/)?/, "");
   return `${API_BASE_URL}/media/${key}`;
